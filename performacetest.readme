@@ -1,0 +1,91 @@
+#This is readme file for test the inwin ceph file system performace, including 1.S3 gateway test 2.IOPS test 3.check the bottleneck nodes
+#														Frank Li  2014/12/09
+#				                                                                                email:frank.likuohao@gamil.
+com 
+
+1.S3 gateway test
+	a. cd /home/inwin/cos
+	b. start COSBench
+	    ./start-all.sh
+	c. access COSBench controller
+	   http://172.20.154.2:19088/controller/index.html 
+	d. load the test config file
+		/home/inwin/80%Read20%Write5MfilesClean.xml
+	e. check result
+	Before shipping out, our result is as follows:	
+Op-Type		Avg-ResTime		Throughput	Bandwidth	
+read		1726.53 ms		50.48 op/s	252.41 MB/S	
+filew		859.11 ms		13.17 op/s	68.42 MB/S
+	f:ref 
+		i.userguide https://github.com/intel-cloud/cosbench/blob/master/COSBenchUserGuide.pdf
+		ii.community http://cosbench.1094679.n5.nabble.com/some-question-about-cosbench-td264.html
+	g.if pool full,try our inwin ceph toolset/clean_.rgw.buckets_objs.py
+	  inwin ceph toolset	https://github.com/FrankLikuohao/inwin_ceph_toolset
+2.IOPS test
+	a.check the pool: 
+		ceph df 
+		if no data pool, create the pool
+			ceph osd pool create data 
+		allocate disk size  by 
+			rbd create testimage --size 102400 -m 172.20.154.11 --pool data
+			(change size ->rbd resize --image data/testimage --size 102400)
+	a.map to a partition 
+		sudo rbd map testimage --pool data -m 172.20.154.11
+		ls -al /dev/rbd/data/testimage
+	b.format the partition
+		sudo mkfs.ext4 -m0 /dev/rbd/data/testimage
+	c.mount 
+		sudo mkdir /mnt/ceph
+		sudo mount /dev/rbd/data/testimage /mnt/ceph/
+		df -H
+	d.create the test folder
+		sudo mkdir /mnt/ceph/test
+		sudo chmod 777 /mnt/ceph/test
+		ls -al /mnt/ceph
+		cd /mnt/ceph/test
+	d.test:  no mix read write 
+	 iozone -i 0 -i 1 -i 2 -i 6 -i 7 -r 4k -s 5m -O 
+		-i #	0=write/rewrite, 
+			1=read/re-read, 
+			2=random-read/write
+			6=fwrite/re-fwrite, 
+			7=fread/Re-fread,
+			8=random mix need -l 2 -u 2 -i 8 for 2 threads to mix read and write)
+		#-r  4k       block size=4kb
+		# -s 5m       size= 5MB
+		#-O            unit: IOPS
+		#-b	      outputfilename=results.xls
+		#-t	      threads
+	 in lab 
+	                                                     random  random    bkwd   record   stride  buffer            buffer            
+   
+              KB  reclen   write rewrite    read    reread    read   write    read  rewrite     read   fwrite frewrite   fread  freread
+            5120       4  139039  509326   741144   664542  336031  229433                           409362   405313  742066   511802
+
+	e.mix read write test 
+	iozone -i 0 -i 1 -i 2 -i 6 -i 7 -i 8 -l 6 -u 6 -r 4k -s 5m -O -b iops_results2.xls
+
+	in our lab, the result is as follows:
+	throughput for 6 mixed workload
+	Avg throughput per process 			=  220822.94 ops/sec
+
+	f.ref 
+		iozone parameters http://blog.sina.com.cn/s/blog_3cba7ec10100ea62.html
+		detail document http://www.iozone.org/docs/IOzone_msword_98.pdf
+	g.if pool full,try our inwin ceph toolset/clean_data_objs.py
+	  inwin ceph toolset	https://github.com/FrankLikuohao/inwin_ceph_toolset
+
+3. check the bottleneck nodes
+	a.ceph osd perf	
+	b.result before shipping out
+	osdid fs_commit_latency(ms) fs_apply_latency(ms) 
+    0                     0                    1 
+    1                     0                    2 
+    2                     0                    2 
+    3                     0                    2 
+    4                     0                    3 
+說明
+針對每一個OSD做單一 Operation 做 latency量測。
+而fs_commit_latency 含 syncfs (commit buffer cache to disk )syscall 的時間
+fs_apply_latency含 updates to the in-memory filesystem) 及 journal 的時間
+若有效能瓶頸節點存在，該節點會因瓶頸的嚴重性而產生較長的處理延遲。而結果顯示無明顯不平均的處理延遲範，表示各無瓶頸節點存在。
