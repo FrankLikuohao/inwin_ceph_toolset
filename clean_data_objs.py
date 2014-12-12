@@ -1,4 +1,7 @@
 #!/usr/bin/python
+#This is the program for clean all objects in data pool 
+#					                              Frank Li 2014/12/12
+#	                                  frank.likuohao@gmail.com
 import os
 #rados -p .rgw.buckets ls - > allbuckets
 
