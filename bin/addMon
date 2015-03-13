@@ -1,0 +1,43 @@
+#mon2
+mkdir tmp
+sudo \rm -rf /var/lib/ceph/mon/frankhw-2  tmp
+ceph1 auth get mon. -o tmp/key
+ceph1 mon getmap -o tmp/map
+sudo ceph-mon --cluster frankhw -i 2 --mkfs --monmap tmp/map --keyring tmp/key
+sudo ceph-mon --cluster frankhw -i 2 --public-addr 172.20.44.7:6789
+
+#mon3
+sudo \rm -rf /var/lib/ceph/mon/frankhw-3  tmp
+mkdir tmp
+ceph1 auth get mon. -o tmp/key
+ceph1 mon getmap -o tmp/map
+sudo ceph-mon --cluster frankhw -i 3 --mkfs --monmap tmp/map --keyring tmp/key
+sudo ceph-mon --cluster frankhw -i 3 --public-addr 172.20.44.8:6789
+#reboot 
+#sudo ceph-mon --cluster frankhw -i 3 --public-addr 172.20.44.8:6790
+
+#mon4
+sudo \rm -rf /var/lib/ceph/mon/frankhw-4  tmp
+mkdir tmp
+ceph1 auth get mon. -o tmp/key
+ceph1 mon getmap -o tmp/map
+sudo ceph-mon --cluster frankhw -i 4 --mkfs --monmap tmp/map --keyring tmp/key
+sudo ceph-mon --cluster frankhw -i 4 --public-addr 172.20.44.9:6789
+
+
+sudo ceph --cluster frankhw  mon add mon.4 172.20.44.9:6789
+sudo ceph --cluster frankhw  mon add vmon2 172.20.44.7:6790
+
+
+#check mon name 
+ceph1 mon_status
+service ceph --cluster frankhw -a stop mon.3
+sudo ceph --cluster frankhw  mon remove 3
+
+[mon.1]
+  host                       = vmon2 
+  mon addr                   = 172.20.44.7:6799
+[mon.4]
+  host                       = vmon4
+  mon addr                   = 172.20.44.9:6789
+#ceph gg
