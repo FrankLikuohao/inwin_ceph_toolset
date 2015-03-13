@@ -1,0 +1,4 @@
+sudo ceph-fuse -m 172.20.44.6:6789 /home/frank/cephfuse/
+df -H
+sudo mkdir /home/frank/cephfuse/test
+sudo chmod 777 /home/frank/cephfuse/test
