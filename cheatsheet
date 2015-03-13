@@ -1,0 +1,19 @@
+ceph1 osd crush reweight  osd.0 0.03999
+service ceph --cluster frankhw  -a stop mon.1
+[mon.1]
+  host                       = vmon2 
+  mon addr                   = 172.20.44.7:6789
+ ceph --cluster frankhw mon remove 1
+
+ceph-deploy --cluster frankhw --overwrite-conf admin vdeploy vmon2 vmon3 vmon4
+ceph-deploy --cluster frankhw --overwrite-conf config push vmon2 vmon3 vmon4
+
+sudo stop ceph-mon-all
+sudo ceph-mon --cluster frankhw -i vmon2 --inject-monmap /tmp/monmap
+frank@vmon2:~$ ceph1 -s
+2015-02-10 07:37:06.740304 7f809073d700  0 -- :/1007139 >> 172.20.44.7:6789/0 pipe(0x7f808c027120 sd=3 :0 s=1 pgs=0 cs=0 l=1 c=0x7f808c0273b0).fault
+
+ceph1 -m 172.20.44.7:6790 -s
+sudo start ceph-all
+ ceph-deploy --cluster frankhw --overwrite-conf config push vmon2 vmon3 vmon4
+sudo restart ceph-all
