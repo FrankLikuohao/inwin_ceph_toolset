@@ -1,0 +1,47 @@
+#!/bin/bash 
+if [  "$1" = "-h" ]; then
+#if	(( $# != 1 )); then
+    echo "this is a bash script to search all all harddriver and find out the ssd driver "
+    echo ",and output the result to [$1]"
+    echo "ex: $0 ssdfind.txt"
+    echo "result are as follows:"
+    echo "/dev/sdc not SSD"
+    echo "/dev/sdd  SSD"
+    exit 1
+fi
+
+#clear file
+FILE=$1
+if  [  $FILE = "" ];then
+	FILE=ssdfind.txt
+fi
+
+if [ -f $FILE ];
+then
+   \rm -rf $FILE
+   touch $FILE 
+else
+   touch $FILE 
+fi
+
+#ARR=($(\ls -m /dev/[sh]d* |tr "," " "| tr ":" " "))
+ARR=($(\ls -m /sys/block/[sh]d*/queue/rotational |tr "," " "| tr ":" " "))
+#echo ${ARR[@]}
+
+#more /sys/block/sdb/queue/rotational
+ 
+for i in ${ARR[@]}; do
+            #echo check: $i
+            # substring the /sd?
+            sdx=($(echo $i| cut -d'/' -f 4))
+            result=$( more $i )
+			#echo $result
+            if [ $result = 0 ]; then
+                echo "/dev/$sdx"  SSD
+                echo "/dev/$sdx  SSD" >> $FILE
+            else
+                echo "/dev/$sdx" not SSD
+            fi
+done
+echo "more $FILE"
+more $FILE
