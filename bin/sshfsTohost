@@ -1,0 +1,15 @@
+#!/bin/bash 
+if (( $# != 1 )); then
+    echo "Usage: $0 server"
+    echo "mount at /home/frank/sshfs/frank@$server"
+    echo "ex: $0 storage0"
+    echo "Frank Li 2015/03/17"
+    exit 1
+fi
+
+server=$1
+
+mkdir ~/sshfs/frank@$server
+sshfs -p 22 frank@$server:/home/frank /home/frank/sshfs/frank@$server
+
+#sshfs appleboy@www.cn.ee.ccu.edu.tw:/home/appleboy /home/git/CN-p 22 -o reconnect,sshfs_sync -o uid=1000,gid=1000 -o workaround=rename
