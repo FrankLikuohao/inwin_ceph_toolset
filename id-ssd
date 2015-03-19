@@ -1,0 +1,65 @@
+#!/bin/bash 
+if [  "$1" = "-h" ]; then
+#if	(( $# != 1 )); then
+    echo "ex: $0 argument1 argument2"
+    echo "this is a bash script to search all all harddriver and find out the ssd driver "
+    echo "and output the result to [argument1] not SSD to[argument2]"
+    echo "default setting are ssdlist.txt notssdlist.txt if no argument1 argument2"
+    exit 1
+fi
+
+#set default output file
+FILE=$1
+if  [  "$FILE" = "" ];then
+	FILE=ssdfind.txt
+fi
+
+FILE_not_ssd=$2
+if  [  "$FILE_not_ssd" = "" ];then
+	FILE_not_ssd=notssdlist.txt
+fi
+
+#clear file
+if [ -f $FILE ];
+then
+   \rm -rf $FILE
+   touch $FILE 
+else
+   touch $FILE 
+fi
+
+if [ -f $FILE_not_ssd ];
+then
+   \rm -rf $FILE_not_ssd
+   touch $FILE_not_ssd 
+else
+   touch $FILE_not_ssd 
+fi
+#gather check files into arrary 
+ARR=($(\ls -m /dev/[sh]d* |tr "," " "| tr ":" " "))
+ARR=($(\ls -m /sys/block/[sh]d*/queue/rotational |tr "," " "| tr ":" " "))
+#echo ${ARR[@]}
+
+
+ 
+for i in ${ARR[@]}; do
+            #echo check: $i
+            # substring the /sd?
+            sdx=($(echo $i| cut -d'/' -f 4))  #get "sdb" in /sys/block/sdb/queue/rotational
+            result=$( more $i ) #0 or 1
+            #more /sys/block/sdb/queue/rotational    0 ==>SSD
+			#echo $result
+            if [ $result = 0 ]; then
+                echo "/dev/$sdx"  SSD
+                echo "/dev/$sdx" >> $FILE   #save to file
+            else
+                echo "/dev/$sdx" not SSD
+                echo "/dev/$sdx" >> $FILE_not_ssd   #save to file
+            fi
+done
+
+#show the output file
+echo "more $FILE"
+more $FILE
+echo "more $FILE_not_ssd"
+more $FILE_not_ssd
